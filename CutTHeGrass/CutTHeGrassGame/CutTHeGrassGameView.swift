@@ -1,5 +1,5 @@
 //
-//  CutTHeGrassGameViewModel.swift
+//  CutTHeGrassGameView.swift
 //  CutTHeGrass
 //
 //  Created by Herlandro Hermogenes on 20/03/2025.
@@ -9,8 +9,9 @@ import SwiftUI
 
 struct CutTHeGrassGameView: View {
     @ObservedObject var viewModel = CutTHeGrassGameViewModel()
+    @StateObject var trimmerViewModel = TrimmerViewModel()  // ViewModel para o Trimmer
     
-    // Computed property for avatar image from login
+    // Computed property for the avatar (login image)
     var avatarImage: Image {
         if let data = UserDefaults.standard.data(forKey: "profileImage"),
            let uiImage = UIImage(data: data) {
@@ -22,57 +23,76 @@ struct CutTHeGrassGameView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                // Game background
-                Color.green
-                    .ignoresSafeArea()
+            GeometryReader { geometry in
+                // Define as margens internas
+                let minX: CGFloat = 4
+                let minY: CGFloat = 4
+                let maxX = geometry.size.width - 4
+                let maxY = geometry.size.height - 4
                 
-                // Lawnmower image
-                Image("lawnmower")
-                    .resizable()
-                    .frame(width: 50, height: 50)
-                    .position(viewModel.mowerPosition)
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                viewModel.mowerPosition = value.location
-                            }
-                    )
-                
-                // Avatar button at top right
-                VStack {
-                    HStack {
+                ZStack {
+                    // Background: Maze with grass
+                    MazeView()
+                    
+                    // TrimmerView usando o TrimmerViewModel
+                    TrimmerView(viewModel: trimmerViewModel)
+                    
+                    // Directional control pad positioned at the bottom left
+                    VStack {
                         Spacer()
-                        Button(action: {
-                            viewModel.didTapProfile()
-                        }) {
-                            avatarImage
-                                .resizable()
-                                .frame(width: 64, height: 64)
-                                .clipShape(Circle())
+                        HStack {
+                            DirectionPad { direction in
+                                if direction == "cut" {
+                                    viewModel.cut()  // Ação de corte permanece no viewModel do jogo
+                                } else {
+                                    trimmerViewModel.move(direction: direction)
+                                }
+                            }
+                            Spacer()
                         }
+                        .padding(.leading, 16)
+                        .padding(.bottom, 16)
                     }
-                    Spacer()
+                    
+                    // Avatar button at top right
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                viewModel.didTapProfile()
+                            }) {
+                                avatarImage
+                                    .resizable()
+                                    .frame(width: 40, height: 40)
+                                    .clipShape(Circle())
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 16)
+                    .padding(.horizontal, 16)
+                    
+                    // NavigationLink to ProfileView
+                    NavigationLink(destination: ProfileView(), isActive: $viewModel.navigateToProfile) {
+                        EmptyView()
+                    }
                 }
-                .padding(.top, 16)
-                .padding(.horizontal, 16)
-                
-                // NavigationLink to ProfileView
-                NavigationLink(destination: ProfileView(), isActive: $viewModel.navigateToProfile) {
-                    EmptyView()
+                // Limita a posição do trimmer para ficar dentro da área visível com margem de 4
+                .onChange(of: trimmerViewModel.position) { newPosition in
+                    let clampedX = min(max(newPosition.x, minX), maxX)
+                    let clampedY = min(max(newPosition.y, minY), maxY)
+                    if newPosition.x != clampedX || newPosition.y != clampedY {
+                        trimmerViewModel.position = CGPoint(x: clampedX, y: clampedY)
+                    }
                 }
             }
             .navigationBarHidden(true)
-            .onAppear {
-                viewModel.startGameLoop()
-            }
-            .onDisappear {
-                viewModel.stopGameLoop()
-            }
         }
     }
 }
 
-#Preview {
-    CutTHeGrassGameView()
+struct CutTHeGrassGameView_Previews: PreviewProvider {
+    static var previews: some View {
+        CutTHeGrassGameView()
+    }
 }
