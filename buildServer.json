@@ -10,7 +10,8 @@
 		"swift"
 	],
 	"argv": [
-		"/opt/homebrew/bin/xcode-build-server"
+		"/opt/homebrew/bin/xcode-build-server",
+		"/usr/local/bin/xcode-build-server"
 	],
 	"workspace": "/Users/h2/H2/Projects/CutTheGrass/CutTHeGrass.xcodeproj/project.xcworkspace",
 	"build_root": "/Users/h2/Library/Developer/Xcode/DerivedData/CutTHeGrass-fzfjkdmfthlgrvgqwuwmlwyfortb",
